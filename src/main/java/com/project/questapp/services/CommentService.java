@@ -38,7 +38,7 @@ public class CommentService {
 	}
 
 	public Comment createOneComment(CommentCreateRequest newCommentCreateRequest) {
-		User user = userService.getOneUser(newCommentCreateRequest.getUserId());
+		User user = userService.getOneUserById(newCommentCreateRequest.getUserId());
 		Post post = postService.getOnePostById(newCommentCreateRequest.getPostId());
 		if (user == null & post == null) {
 			return null;

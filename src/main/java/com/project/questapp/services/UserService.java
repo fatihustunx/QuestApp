@@ -25,11 +25,11 @@ public class UserService {
 		return userRepository.save(newUser);
 	}
 
-	public User getOneUser(Long userId) {
+	public User getOneUserById(Long userId) {
 		return userRepository.findById(userId).orElse(null);
 	}
 
-	public User updateOneUser(Long userId, User newUser) {
+	public User updateOneUserById(Long userId, User newUser) {
 		Optional<User> user = userRepository.findById(userId);
 		if (user.isPresent()) {
 			User foundUser = user.get();
@@ -42,7 +42,7 @@ public class UserService {
 		}
 	}
 
-	public void deleteById(Long userId) {
+	public void deleteOneUserById(Long userId) {
 		this.userRepository.deleteById(userId);
 	}
 

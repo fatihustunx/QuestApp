@@ -37,17 +37,17 @@ public class UserController {
 	@GetMapping("/{userId}")
 	public User getOneUser(@PathVariable Long userId) {
 		// custom exception !
-		return userService.getOneUser(userId);
+		return userService.getOneUserById(userId);
 	}
 
 	@PutMapping("/{userId}")
 	public User updateOneUser(@PathVariable Long userId, @RequestBody User newUser) {
-		return userService.updateOneUser(userId, newUser);
+		return userService.updateOneUserById(userId, newUser);
 	}
 
 	@DeleteMapping("/{userId}")
 	public void deleteOneUser(@PathVariable Long userId) {
-		this.userService.deleteById(userId);
+		this.userService.deleteOneUserById(userId);
 	}
 
 }
