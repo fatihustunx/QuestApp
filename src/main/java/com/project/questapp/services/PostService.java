@@ -1,5 +1,6 @@
 package com.project.questapp.services;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -57,11 +58,20 @@ public class PostService {
 		toSave.setTitle(newPostCreateRequest.getTitle());
 		toSave.setText(newPostCreateRequest.getText());
 		toSave.setUser(user);
+		toSave.setCreateDate(new Date());
 		return postRepository.save(toSave);
 	}
 
 	public Post getOnePostById(Long postId) {
 		return postRepository.findById(postId).orElse(null);
+	}
+	
+	public PostResponse getOnePostByIdWithLikes(Long postId) {
+		Post post = new Post();
+		post = postRepository.findById(postId).orElse(null);
+		List<LikeResponse> likes = likeService.getAllLikes(Optional.of(postId), Optional.ofNullable(null));
+		
+		return new PostResponse(post, likes);
 	}
 
 	public Post updateOnePostById(Long postId, PostUpdateRequest updatePost) {
