@@ -12,10 +12,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.project.questapp.entities.RefreshToken;
 import com.project.questapp.entities.User;
+import com.project.questapp.requests.RefreshRequest;
 import com.project.questapp.requests.UserRequest;
 import com.project.questapp.responses.AuthResponse;
 import com.project.questapp.security.JwtTokenProvider;
+import com.project.questapp.services.RefreshTokenService;
 import com.project.questapp.services.UserService;
 
 @RestController
@@ -24,15 +27,18 @@ public class AuthController {
 
 	private AuthenticationManager authenticationManager;
 
+	private RefreshTokenService refreshTokenService;
+
 	private JwtTokenProvider jwtTokenProvider;
 
 	private UserService userService;
 
 	private PasswordEncoder passwordEncoder;
 
-	public AuthController(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider,
-			UserService userService, PasswordEncoder passwordEncoder) {
+	public AuthController(AuthenticationManager authenticationManager, RefreshTokenService refreshTokenService,
+			JwtTokenProvider jwtTokenProvider, UserService userService, PasswordEncoder passwordEncoder) {
 		this.authenticationManager = authenticationManager;
+		this.refreshTokenService = refreshTokenService;
 		this.jwtTokenProvider = jwtTokenProvider;
 		this.userService = userService;
 		this.passwordEncoder = passwordEncoder;
@@ -45,10 +51,11 @@ public class AuthController {
 		Authentication auth = authenticationManager.authenticate(authToken);
 		SecurityContextHolder.getContext().setAuthentication(auth);
 		String jwtToken = jwtTokenProvider.generateJwtToken(auth);
-		
+
 		User user = userService.getOneUserByUserName(loginRequest.getUserName());
 		AuthResponse authResponse = new AuthResponse();
-		authResponse.setMessage("Bearer " + jwtToken);
+		authResponse.setAccessToken("Bearer " + jwtToken);
+		authResponse.setRefreshToken(refreshTokenService.createRefreshToken(user));
 		authResponse.setUserId(user.getId());
 		return authResponse;
 	}
@@ -65,7 +72,35 @@ public class AuthController {
 		user.setUserName(registerRequest.getUserName());
 		user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
 		userService.createOneUser(user);
+
+		UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+				registerRequest.getUserName(), registerRequest.getPassword());
+		Authentication auth = authenticationManager.authenticate(authToken);
+		SecurityContextHolder.getContext().setAuthentication(auth);
+		String jwtToken = jwtTokenProvider.generateJwtToken(auth);
+
+		authResponse.setUserId(user.getId());
 		authResponse.setMessage("User successfully registered.");
+		authResponse.setAccessToken("Bearer " + jwtToken);
+		authResponse.setRefreshToken(refreshTokenService.createRefreshToken(user));
+
 		return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
+	}
+
+	@PostMapping("/refresh")
+	public ResponseEntity<AuthResponse> refresh(@RequestBody RefreshRequest refreshRequest) {
+		AuthResponse response = new AuthResponse();
+		RefreshToken token = refreshTokenService.getByUser(refreshRequest.getUserId());
+		if (token.getToken().equals(refreshRequest.getRefreshToken()) && !refreshTokenService.isRefreshExpired(token)) {
+			User user = token.getUser();
+			String jwtToken = jwtTokenProvider.generateJwtTokenByUserId(user.getId());
+			response.setMessage("token successfully refreshed.");
+			response.setAccessToken("Bearer " + jwtToken);
+			response.setUserId(user.getId());
+			return new ResponseEntity<>(response, HttpStatus.OK);
+		} else {
+			response.setMessage("refresh token is not valid.");
+			return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+		}
 	}
 }
