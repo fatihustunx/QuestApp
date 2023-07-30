@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.project.questapp.entities.User;
+import com.project.questapp.exceptions.UserNotFoundException;
 import com.project.questapp.responses.UserResponse;
 import com.project.questapp.services.UserService;
 
@@ -38,7 +39,11 @@ public class UserController {
 	@GetMapping("/{userId}")
 	public UserResponse getOneUser(@PathVariable Long userId) {
 		// custom exception !
-		return new UserResponse(userService.getOneUserById(userId));
+		User user = userService.getOneUserById(userId);
+		if(user == null) {
+			throw new UserNotFoundException();
+		}
+		return new UserResponse(user);
 	}
 
 	@PutMapping("/{userId}")
@@ -55,4 +60,5 @@ public class UserController {
 	public List<Object> getUserActivity(@PathVariable Long userId){
 		return userService.getUserActivity(userId);
 	}
+	
 }
